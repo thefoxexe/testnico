@@ -11,7 +11,7 @@
     --ink-0:#151513;
     --ink-1:#4a473e;
     --ink-2:#8c8776;
-    --accent:#111110;
+    --accent:#7CFF9B;
   }
 
   *{box-sizing:border-box;}
@@ -20,24 +20,23 @@
     height:100%;
     margin:0;
     padding:0;
-    overflow:hidden;
     background:var(--bg-0);
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,Arial,sans-serif;
   }
 
   .page{
     position:relative;
-    width:100vw;
-    height:100vh;
+    width:100%;
+    min-height:100vh;
     display:flex;
     align-items:center;
     justify-content:center;
+    overflow:hidden;
     background:
       radial-gradient(60% 55% at 50% 38%, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 60%),
       linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
   }
 
-  /* subtle diagonal line texture, like brushed paper */
   .bg-lines{
     position:absolute;
     inset:0;
@@ -72,46 +71,60 @@
     background:radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(20,18,12,0.18) 100%);
   }
 
-  /* ---------- floating words ---------- */
   .floating-words{
     position:absolute;
     inset:0;
     pointer-events:none;
   }
 
-  .word{
+  .orbit{
     position:absolute;
-    display:flex;
-    white-space:nowrap;
-    font-size:clamp(11px, 1vw, 13px);
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    color:var(--ink-2);
-    font-weight:500;
     animation-name:drift;
     animation-timing-function:ease-in-out;
     animation-iteration-count:infinite;
     will-change:transform;
-    opacity:.55;
+  }
+
+  .word{
+    display:flex;
+    white-space:nowrap;
+    font-size:clamp(10px, 2.6vw, 13px);
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-2);
+    font-weight:500;
+    opacity:.6;
+    will-change:transform;
+  }
+
+  .word.jiggling{
+    animation:jiggle 320ms ease-in-out;
   }
 
   .letter{
     display:inline-block;
     transition:
-      transform 900ms cubic-bezier(.22,.61,.36,1),
-      opacity 900ms cubic-bezier(.22,.61,.36,1),
-      filter 900ms cubic-bezier(.22,.61,.36,1);
+      transform 260ms cubic-bezier(.34,1.56,.64,1),
+      opacity 220ms ease-out,
+      filter 220ms ease-out;
     transform:translate(0,0) rotate(0deg) scale(1);
     filter:blur(0px);
   }
 
   .word.exploded .letter{
-    opacity:0;
-    filter:blur(2px);
+    opacity:.22;
+    filter:blur(1.5px);
     transform:
       translate(var(--dx), var(--dy))
       rotate(var(--rot))
-      scale(.4);
+      scale(.55);
+  }
+
+  .word.reforming .letter{
+    transition:
+      transform 700ms cubic-bezier(.16,1,.3,1),
+      opacity 620ms ease-in,
+      filter 620ms ease-in;
   }
 
   @keyframes drift{
@@ -121,7 +134,16 @@
     75%{ transform:translate(var(--dx3), var(--dy3)) rotate(var(--r2)); }
   }
 
-  /* ---------- hero ---------- */
+  @keyframes jiggle{
+    0%{ transform:translate(0,0) rotate(0deg); }
+    18%{ transform:translate(-3px, 2px) rotate(-4deg); }
+    36%{ transform:translate(3px, -2px) rotate(4deg); }
+    54%{ transform:translate(-2px, 2px) rotate(-3deg); }
+    72%{ transform:translate(2px, -1px) rotate(3deg); }
+    88%{ transform:translate(-1px, 1px) rotate(-1deg); }
+    100%{ transform:translate(0,0) rotate(0deg); }
+  }
+
   .hero{
     position:relative;
     z-index:5;
@@ -133,9 +155,10 @@
   .hero h1{
     margin:0 0 22px;
     font-weight:800;
-    font-size:clamp(2.4rem, 6vw, 5rem);
+    font-size:clamp(2rem, 8vw, 5rem);
     line-height:1.04;
     letter-spacing:-0.035em;
+    text-wrap:balance;
     background:linear-gradient(180deg, var(--ink-0) 0%, #2b2a24 60%, #55523f 100%);
     -webkit-background-clip:text;
     background-clip:text;
@@ -192,8 +215,9 @@
     width:7px;
     height:7px;
     border-radius:50%;
-    background:#7CFF9B;
-    box-shadow:0 0 10px #7CFF9B;
+    background:var(--accent);
+    box-shadow:0 0 10px var(--accent);
+    flex:none;
   }
 
   @keyframes riseIn{
@@ -201,8 +225,14 @@
   }
 
   @media (max-width:640px){
-    .word{ display:none; }
-    .hero h1{ font-size:2.1rem; }
+    .orbit{ display:none; }
+    .hero h1{ font-size:2.4rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .orbit, .word.jiggling{ animation:none; }
+    .hero h1, .hero p, .cta{ animation:none; opacity:1; transform:none; }
+    .letter{ transition:none; }
   }
 </style>
 </head>
@@ -248,46 +278,60 @@
 
   const container = document.getElementById('floatingWords');
   const wordEls = [];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function rnd(min, max){ return Math.random() * (max - min) + min; }
 
   words.forEach(w => {
+    const orbitEl = document.createElement('div');
+    orbitEl.className = 'orbit';
+    orbitEl.style.left = w.left + '%';
+    orbitEl.style.top = w.top + '%';
+
+    orbitEl.style.setProperty('--dx1', rnd(-10,10).toFixed(1)+'px');
+    orbitEl.style.setProperty('--dy1', rnd(-9,9).toFixed(1)+'px');
+    orbitEl.style.setProperty('--dx2', rnd(-13,13).toFixed(1)+'px');
+    orbitEl.style.setProperty('--dy2', rnd(-10,10).toFixed(1)+'px');
+    orbitEl.style.setProperty('--dx3', rnd(-9,9).toFixed(1)+'px');
+    orbitEl.style.setProperty('--dy3', rnd(-11,11).toFixed(1)+'px');
+    orbitEl.style.setProperty('--r1', rnd(-4,4).toFixed(1)+'deg');
+    orbitEl.style.setProperty('--r2', rnd(-4,4).toFixed(1)+'deg');
+    orbitEl.style.animationDuration = rnd(11,20).toFixed(1)+'s';
+    orbitEl.style.animationDelay = '-' + rnd(0,20).toFixed(1)+'s';
+
     const wordEl = document.createElement('div');
     wordEl.className = 'word';
-    wordEl.style.left = w.left + '%';
-    wordEl.style.top = w.top + '%';
-
-    // organic drift animation, randomized per word
-    wordEl.style.setProperty('--dx1', rnd(-16,16).toFixed(1)+'px');
-    wordEl.style.setProperty('--dy1', rnd(-14,14).toFixed(1)+'px');
-    wordEl.style.setProperty('--dx2', rnd(-20,20).toFixed(1)+'px');
-    wordEl.style.setProperty('--dy2', rnd(-16,16).toFixed(1)+'px');
-    wordEl.style.setProperty('--dx3', rnd(-14,14).toFixed(1)+'px');
-    wordEl.style.setProperty('--dy3', rnd(-18,18).toFixed(1)+'px');
-    wordEl.style.setProperty('--r1', rnd(-5,5).toFixed(1)+'deg');
-    wordEl.style.setProperty('--r2', rnd(-5,5).toFixed(1)+'deg');
-    wordEl.style.animationDuration = rnd(11,20).toFixed(1)+'s';
-    wordEl.style.animationDelay = '-' + rnd(0,20).toFixed(1)+'s';
 
     [...w.text].forEach(ch => {
       const letterEl = document.createElement('span');
       letterEl.className = 'letter';
       letterEl.textContent = ch === ' ' ? ' ' : ch;
-      letterEl.style.setProperty('--dx', rnd(-70,70).toFixed(0)+'px');
-      letterEl.style.setProperty('--dy', rnd(-70,70).toFixed(0)+'px');
-      letterEl.style.setProperty('--rot', rnd(-180,180).toFixed(0)+'deg');
+      letterEl.style.setProperty('--dx', rnd(-55,55).toFixed(0)+'px');
+      letterEl.style.setProperty('--dy', rnd(-55,55).toFixed(0)+'px');
+      letterEl.style.setProperty('--rot', rnd(-150,150).toFixed(0)+'deg');
       wordEl.appendChild(letterEl);
     });
 
-    container.appendChild(wordEl);
+    orbitEl.appendChild(wordEl);
+    container.appendChild(orbitEl);
     wordEls.push(wordEl);
   });
 
+  if (reduceMotion) return;
+
   function reshuffle(el){
     el.querySelectorAll('.letter').forEach(l => {
-      l.style.setProperty('--dx', rnd(-70,70).toFixed(0)+'px');
-      l.style.setProperty('--dy', rnd(-70,70).toFixed(0)+'px');
-      l.style.setProperty('--rot', rnd(-180,180).toFixed(0)+'deg');
+      l.style.setProperty('--dx', rnd(-55,55).toFixed(0)+'px');
+      l.style.setProperty('--dy', rnd(-55,55).toFixed(0)+'px');
+      l.style.setProperty('--rot', rnd(-150,150).toFixed(0)+'deg');
+    });
+  }
+
+  function jiggleAll(){
+    wordEls.forEach(el => {
+      el.classList.remove('jiggling');
+      void el.offsetWidth; // restart the shake animation each cycle
+      el.classList.add('jiggling');
     });
   }
 
@@ -296,8 +340,9 @@
       reshuffle(el);
       const letters = el.querySelectorAll('.letter');
       letters.forEach((l, i) => {
-        l.style.transitionDelay = (i * 28) + 'ms';
+        l.style.transitionDelay = (i * 14) + 'ms';
       });
+      el.classList.remove('reforming');
       el.classList.add('exploded');
     });
   }
@@ -307,22 +352,33 @@
       const letters = el.querySelectorAll('.letter');
       const n = letters.length;
       letters.forEach((l, i) => {
-        l.style.transitionDelay = ((n - i) * 24) + 'ms';
+        l.style.transitionDelay = ((n - i) * 12) + 'ms';
       });
+      el.classList.add('reforming');
       el.classList.remove('exploded');
     });
   }
 
-  const CYCLE = 9000;   // total loop duration
-  const HOLD_EXPLODED = 1500;
-
-  function loop(){
-    explodeAll();
-    setTimeout(reformAll, HOLD_EXPLODED);
+  function settleAll(){
+    wordEls.forEach(el => el.classList.remove('reforming'));
   }
 
-  setTimeout(loop, 3200); // let the entrance animation settle first
-  setInterval(loop, CYCLE);
+  // one full cycle = 2s: gigote (~0.32s) -> explode letter by letter (~0.3s)
+  // -> brief hold -> letters ease back gently into place (~0.7s)
+  const CYCLE = 2000;
+  const T_EXPLODE = 360;
+  const T_REFORM = 1000;
+  const T_SETTLE = 1900;
+
+  function loop(){
+    jiggleAll();
+    setTimeout(explodeAll, T_EXPLODE);
+    setTimeout(reformAll, T_REFORM);
+    setTimeout(settleAll, T_SETTLE);
+    setTimeout(loop, CYCLE);
+  }
+
+  setTimeout(loop, 1200);
 })();
 </script>
 
