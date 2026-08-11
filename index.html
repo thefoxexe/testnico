@@ -6,12 +6,11 @@
 <title>The End of Traditional Consulting</title>
 <style>
   :root{
-    --bg-0:#d9d4c5;
-    --bg-1:#eeeae0;
-    --ink-0:#151513;
-    --ink-1:#4a473e;
-    --ink-2:#8c8776;
-    --accent:#7CFF9B;
+    --bg-0:#ffffff;
+    --ink-0:#0e0e0d;
+    --ink-1:#4b4a45;
+    --ink-2:#a4a196;
+    --accent:#16a34a;
   }
 
   *{box-sizing:border-box;}
@@ -32,9 +31,7 @@
     align-items:center;
     justify-content:center;
     overflow:hidden;
-    background:
-      radial-gradient(60% 55% at 50% 38%, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 60%),
-      linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
+    background:var(--bg-0);
   }
 
   .bg-lines{
@@ -43,32 +40,12 @@
     pointer-events:none;
     background-image:repeating-linear-gradient(
       115deg,
-      rgba(20,20,15,0.05) 0px,
-      rgba(20,20,15,0.05) 1px,
+      rgba(20,20,15,0.035) 0px,
+      rgba(20,20,15,0.035) 1px,
       transparent 1px,
-      transparent 7px
+      transparent 8px
     );
-    mix-blend-mode:multiply;
-    opacity:.55;
-  }
-
-  .bg-glow{
-    position:absolute;
-    top:-10%;
-    left:50%;
-    transform:translateX(-50%);
-    width:70vw;
-    height:60vh;
-    background:radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 65%);
-    pointer-events:none;
-    filter:blur(10px);
-  }
-
-  .vignette{
-    position:absolute;
-    inset:0;
-    pointer-events:none;
-    background:radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(20,18,12,0.18) 100%);
+    opacity:.6;
   }
 
   .floating-words{
@@ -92,39 +69,36 @@
     letter-spacing:.06em;
     text-transform:uppercase;
     color:var(--ink-2);
-    font-weight:500;
-    opacity:.6;
+    font-weight:600;
+    opacity:.78;
     will-change:transform;
   }
 
   .word.jiggling{
-    animation:jiggle 320ms ease-in-out;
+    animation:jiggle 420ms ease-in-out;
   }
 
   .letter{
     display:inline-block;
     transition:
-      transform 260ms cubic-bezier(.34,1.56,.64,1),
-      opacity 220ms ease-out,
-      filter 220ms ease-out;
+      transform 420ms cubic-bezier(.2,.85,.4,1),
+      opacity 300ms ease-out;
     transform:translate(0,0) rotate(0deg) scale(1);
-    filter:blur(0px);
   }
 
   .word.exploded .letter{
-    opacity:.22;
-    filter:blur(1.5px);
+    opacity:.95;
+    color:var(--ink-1);
     transform:
       translate(var(--dx), var(--dy))
       rotate(var(--rot))
-      scale(.55);
+      scale(var(--sc));
   }
 
   .word.reforming .letter{
     transition:
-      transform 700ms cubic-bezier(.16,1,.3,1),
-      opacity 620ms ease-in,
-      filter 620ms ease-in;
+      transform 1200ms cubic-bezier(.16,1,.3,1),
+      opacity 900ms ease-in;
   }
 
   @keyframes drift{
@@ -136,11 +110,12 @@
 
   @keyframes jiggle{
     0%{ transform:translate(0,0) rotate(0deg); }
-    18%{ transform:translate(-3px, 2px) rotate(-4deg); }
-    36%{ transform:translate(3px, -2px) rotate(4deg); }
-    54%{ transform:translate(-2px, 2px) rotate(-3deg); }
-    72%{ transform:translate(2px, -1px) rotate(3deg); }
-    88%{ transform:translate(-1px, 1px) rotate(-1deg); }
+    15%{ transform:translate(-4px, 2px) rotate(-5deg); }
+    30%{ transform:translate(4px, -3px) rotate(5deg); }
+    45%{ transform:translate(-3px, 3px) rotate(-4deg); }
+    60%{ transform:translate(3px, -2px) rotate(4deg); }
+    75%{ transform:translate(-2px, 1px) rotate(-2deg); }
+    90%{ transform:translate(1px, -1px) rotate(1deg); }
     100%{ transform:translate(0,0) rotate(0deg); }
   }
 
@@ -159,11 +134,7 @@
     line-height:1.04;
     letter-spacing:-0.035em;
     text-wrap:balance;
-    background:linear-gradient(180deg, var(--ink-0) 0%, #2b2a24 60%, #55523f 100%);
-    -webkit-background-clip:text;
-    background-clip:text;
-    color:transparent;
-    text-shadow:0 1px 0 rgba(255,255,255,0.4);
+    color:var(--ink-0);
     opacity:0;
     transform:translateY(14px);
     animation:riseIn 1000ms cubic-bezier(.22,.61,.36,1) 200ms forwards;
@@ -200,7 +171,7 @@
     cursor:pointer;
     box-shadow:
       0 1px 0 rgba(255,255,255,0.08) inset,
-      0 10px 30px rgba(0,0,0,0.25);
+      0 10px 30px rgba(0,0,0,0.18);
     transition:transform 350ms cubic-bezier(.22,.61,.36,1), box-shadow 350ms;
   }
 
@@ -208,7 +179,7 @@
     transform:translateY(-2px) scale(1.02);
     box-shadow:
       0 1px 0 rgba(255,255,255,0.12) inset,
-      0 16px 40px rgba(0,0,0,0.32);
+      0 16px 40px rgba(0,0,0,0.24);
   }
 
   .cta .dot{
@@ -240,7 +211,6 @@
 
 <div class="page">
   <div class="bg-lines"></div>
-  <div class="bg-glow"></div>
 
   <div class="floating-words" id="floatingWords"></div>
 
@@ -253,8 +223,6 @@
       <span>&rarr;</span>
     </button>
   </div>
-
-  <div class="vignette"></div>
 </div>
 
 <script>
@@ -282,6 +250,19 @@
 
   function rnd(min, max){ return Math.random() * (max - min) + min; }
 
+  // radial burst: even spread in every direction, not just a random x/y jitter
+  function randomBurst(letterEl, index, total){
+    const baseAngle = (index / total) * 360;               // spread letters around the circle...
+    const angle = (baseAngle + rnd(-45, 45)) * (Math.PI / 180); // ...then jitter each one
+    const radius = rnd(70, 170);
+    const dx = Math.cos(angle) * radius;
+    const dy = Math.sin(angle) * radius;
+    letterEl.style.setProperty('--dx', dx.toFixed(0) + 'px');
+    letterEl.style.setProperty('--dy', dy.toFixed(0) + 'px');
+    letterEl.style.setProperty('--rot', rnd(-260, 260).toFixed(0) + 'deg');
+    letterEl.style.setProperty('--sc', rnd(.8, 1.25).toFixed(2));
+  }
+
   words.forEach(w => {
     const orbitEl = document.createElement('div');
     orbitEl.className = 'orbit';
@@ -302,13 +283,16 @@
     const wordEl = document.createElement('div');
     wordEl.className = 'word';
 
+    const chars = [...w.text].filter(ch => ch !== ' ');
+    let ci = 0;
     [...w.text].forEach(ch => {
       const letterEl = document.createElement('span');
       letterEl.className = 'letter';
-      letterEl.textContent = ch === ' ' ? ' ' : ch;
-      letterEl.style.setProperty('--dx', rnd(-55,55).toFixed(0)+'px');
-      letterEl.style.setProperty('--dy', rnd(-55,55).toFixed(0)+'px');
-      letterEl.style.setProperty('--rot', rnd(-150,150).toFixed(0)+'deg');
+      letterEl.textContent = ch === ' ' ? ' ' : ch;
+      if (ch !== ' '){
+        randomBurst(letterEl, ci, chars.length);
+        ci++;
+      }
       wordEl.appendChild(letterEl);
     });
 
@@ -320,11 +304,8 @@
   if (reduceMotion) return;
 
   function reshuffle(el){
-    el.querySelectorAll('.letter').forEach(l => {
-      l.style.setProperty('--dx', rnd(-55,55).toFixed(0)+'px');
-      l.style.setProperty('--dy', rnd(-55,55).toFixed(0)+'px');
-      l.style.setProperty('--rot', rnd(-150,150).toFixed(0)+'deg');
-    });
+    const letters = [...el.querySelectorAll('.letter')].filter(l => l.textContent !== ' ');
+    letters.forEach((l, i) => randomBurst(l, i, letters.length));
   }
 
   function jiggleAll(){
@@ -340,7 +321,7 @@
       reshuffle(el);
       const letters = el.querySelectorAll('.letter');
       letters.forEach((l, i) => {
-        l.style.transitionDelay = (i * 14) + 'ms';
+        l.style.transitionDelay = (i * 22) + 'ms';
       });
       el.classList.remove('reforming');
       el.classList.add('exploded');
@@ -352,7 +333,7 @@
       const letters = el.querySelectorAll('.letter');
       const n = letters.length;
       letters.forEach((l, i) => {
-        l.style.transitionDelay = ((n - i) * 12) + 'ms';
+        l.style.transitionDelay = ((n - i) * 18) + 'ms';
       });
       el.classList.add('reforming');
       el.classList.remove('exploded');
@@ -363,12 +344,14 @@
     wordEls.forEach(el => el.classList.remove('reforming'));
   }
 
-  // one full cycle = 2s: gigote (~0.32s) -> explode letter by letter (~0.3s)
-  // -> brief hold -> letters ease back gently into place (~0.7s)
-  const CYCLE = 2000;
-  const T_EXPLODE = 360;
-  const T_REFORM = 1000;
-  const T_SETTLE = 1900;
+  // one full cycle = 3.5s:
+  // gigote in place (~0.42s) -> burst outward letter by letter in every
+  // direction (~0.5s incl. cascade) -> hold the scattered burst (~0.9s)
+  // -> ease gently back into formation (~1.5s incl. cascade)
+  const CYCLE = 3500;
+  const T_EXPLODE = 500;
+  const T_REFORM = 1800;
+  const T_SETTLE = 3400;
 
   function loop(){
     jiggleAll();
