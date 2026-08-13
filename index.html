@@ -74,8 +74,32 @@
     will-change:transform;
   }
 
-  .word.jiggling{
-    animation:jiggle 420ms ease-in-out;
+  .particle{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:4px;
+    height:4px;
+    margin:-2px 0 0 -2px;
+    border-radius:50%;
+    background:var(--ink-1);
+    opacity:0;
+    pointer-events:none;
+    transform:translate3d(0,0,0) scale(0);
+    will-change:transform, opacity;
+  }
+
+  .particle.bursting{
+    animation-name:particleBurst;
+    animation-timing-function:cubic-bezier(.22,.61,.36,1);
+    animation-fill-mode:forwards;
+  }
+
+  @keyframes particleBurst{
+    0%{ opacity:0; transform:translate3d(0,0,0) scale(0); }
+    10%{ opacity:.9; transform:translate3d(calc(var(--pdx) * .3), calc(var(--pdy) * .3), 0) scale(1); }
+    65%{ opacity:.65; transform:translate3d(var(--pdx), var(--pdy), 0) scale(.8); }
+    100%{ opacity:0; transform:translate3d(calc(var(--pdx) * 1.2), calc(var(--pdy) * 1.2), 0) scale(.35); }
   }
 
   .letter{
@@ -102,8 +126,8 @@
 
   .word.reforming .letter{
     transition:
-      transform 1750ms cubic-bezier(.19,.86,.28,1),
-      opacity 1300ms ease-in;
+      transform 2200ms cubic-bezier(.19,.86,.28,1),
+      opacity 1800ms ease-in;
   }
 
   @keyframes drift{
@@ -111,17 +135,6 @@
     25%{ transform:translate(var(--dx1), var(--dy1)) rotate(var(--r1)); }
     50%{ transform:translate(var(--dx2), var(--dy2)) rotate(0deg); }
     75%{ transform:translate(var(--dx3), var(--dy3)) rotate(var(--r2)); }
-  }
-
-  @keyframes jiggle{
-    0%{ transform:translate(0,0) rotate(0deg); }
-    15%{ transform:translate(-4px, 2px) rotate(-5deg); }
-    30%{ transform:translate(4px, -3px) rotate(5deg); }
-    45%{ transform:translate(-3px, 3px) rotate(-4deg); }
-    60%{ transform:translate(3px, -2px) rotate(4deg); }
-    75%{ transform:translate(-2px, 1px) rotate(-2deg); }
-    90%{ transform:translate(1px, -1px) rotate(1deg); }
-    100%{ transform:translate(0,0) rotate(0deg); }
   }
 
   .hero{
@@ -206,7 +219,7 @@
   }
 
   @media (prefers-reduced-motion: reduce){
-    .orbit, .word.jiggling{ animation:none; }
+    .orbit, .particle.bursting{ animation:none; }
     .hero h1, .hero p, .cta{ animation:none; opacity:1; transform:none; }
     .letter{ transition:none; }
   }
@@ -251,6 +264,8 @@
 
   const container = document.getElementById('floatingWords');
   const wordEls = [];
+  const particleEls = [];
+  const PARTICLES_PER_WORD = 5;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function rnd(min, max){ return Math.random() * (max - min) + min; }
@@ -293,21 +308,41 @@
     });
 
     orbitEl.appendChild(wordEl);
+
+    // a handful of small spark particles that live inside the same drifting
+    // orbit, invisible at rest, that burst outward around the word the
+    // instant it explodes — real explosion debris, not just the letters
+    for (let p = 0; p < PARTICLES_PER_WORD; p++){
+      const particleEl = document.createElement('span');
+      particleEl.className = 'particle';
+      orbitEl.appendChild(particleEl);
+      particleEls.push(particleEl);
+    }
+
     container.appendChild(orbitEl);
     wordEls.push(wordEl);
   });
 
   if (reduceMotion) return;
 
-  function jiggleAll(){
-    wordEls.forEach(el => {
-      el.classList.remove('jiggling');
-      void el.offsetWidth; // restart the shake animation each cycle
-      el.classList.add('jiggling');
+  function burstParticles(){
+    // batch the animation-restart reflow into a single forced layout instead
+    // of one per particle (same layout-thrashing fix as the letters below)
+    particleEls.forEach(p => p.classList.remove('bursting'));
+    void document.body.offsetHeight;
+    particleEls.forEach(p => {
+      const angle = rnd(0, 360) * Math.PI / 180;
+      const radius = rnd(30, 130);
+      p.style.setProperty('--pdx', (Math.cos(angle) * radius).toFixed(0) + 'px');
+      p.style.setProperty('--pdy', (Math.sin(angle) * radius).toFixed(0) + 'px');
+      p.style.animationDuration = rnd(3200, 4000).toFixed(0) + 'ms';
+      p.style.animationDelay = rnd(0, 250).toFixed(0) + 'ms';
+      p.classList.add('bursting');
     });
   }
 
   function explodeAll(){
+    burstParticles();
     // gather every letter from every word first, so the stagger cascades
     // across the whole screen at once rather than word-by-word
     const allLetters = [];
@@ -359,7 +394,7 @@
       [allLetters[i], allLetters[j]] = [allLetters[j], allLetters[i]];
     }
     allLetters.forEach((l, i) => {
-      l.style.transitionDelay = (i * 3) + 'ms';
+      l.style.transitionDelay = (i * 4) + 'ms';
     });
     wordEls.forEach(el => {
       el.classList.add('reforming');
@@ -371,17 +406,17 @@
     wordEls.forEach(el => el.classList.remove('reforming'));
   }
 
-  // one full cycle = 4.8s, tuned for a smooth, unhurried motion throughout:
-  // gigote in place (~0.42s) -> drift apart letter by letter across the
-  // screen with a gentle ease, crossing between words (~1.7s incl. cascade)
-  // -> brief hold (~0.25s) -> glide gently back into formation (~2s incl. cascade)
-  const CYCLE = 4800;
-  const T_EXPLODE = 500;
-  const T_REFORM = 2500;
-  const T_SETTLE = 4700;
+  // one full cycle = 7.2s: the words just drift normally around the hero
+  // (no shake) until the instant they burst apart letter by letter, along
+  // with a spray of small particles (~1.9s incl. cascade) -> stay scattered
+  // for a good while (~1.9s hold) -> glide slowly back into formation
+  // (~2.8s incl. cascade) -> a beat of calm drifting before the next burst
+  const CYCLE = 7200;
+  const T_EXPLODE = 0;
+  const T_REFORM = 3800;
+  const T_SETTLE = 6700;
 
   function loop(){
-    jiggleAll();
     setTimeout(explodeAll, T_EXPLODE);
     setTimeout(reformAll, T_REFORM);
     setTimeout(settleAll, T_SETTLE);
