@@ -83,15 +83,18 @@
     position:relative;
     z-index:1;
     transition:
-      transform 680ms cubic-bezier(.13,.86,.3,1),
-      opacity 300ms ease-out;
+      transform 950ms cubic-bezier(.22,.61,.36,1),
+      opacity 500ms ease-out,
+      filter 950ms cubic-bezier(.22,.61,.36,1);
     transform:translate(0,0) rotate(0deg) scale(1);
+    filter:blur(0px);
   }
 
   .word.exploded .letter{
     opacity:1;
     color:var(--ink-1);
     z-index:20;
+    filter:blur(.4px);
     transform:
       translate(var(--dx), var(--dy))
       rotate(var(--rot))
@@ -100,8 +103,9 @@
 
   .word.reforming .letter{
     transition:
-      transform 1400ms cubic-bezier(.16,1,.3,1),
-      opacity 1000ms ease-in;
+      transform 1650ms cubic-bezier(.19,.86,.28,1),
+      opacity 1300ms ease-in,
+      filter 900ms ease-out;
   }
 
   @keyframes drift{
@@ -273,8 +277,8 @@
     const targetY = rnd(-40, window.innerHeight + 40);
     letterEl.style.setProperty('--dx', (targetX - originX).toFixed(0) + 'px');
     letterEl.style.setProperty('--dy', (targetY - originY).toFixed(0) + 'px');
-    letterEl.style.setProperty('--rot', rnd(-620, 620).toFixed(0) + 'deg');
-    letterEl.style.setProperty('--sc', rnd(.5, 1.9).toFixed(2));
+    letterEl.style.setProperty('--rot', rnd(-150, 150).toFixed(0) + 'deg');
+    letterEl.style.setProperty('--sc', rnd(.8, 1.35).toFixed(2));
   }
 
   words.forEach(w => {
@@ -336,7 +340,7 @@
     }
     allLetters.forEach((l, i) => {
       burstToScreen(l);
-      l.style.transitionDelay = (i * 4) + 'ms';
+      l.style.transitionDelay = (i * 6) + 'ms';
     });
   }
 
@@ -352,7 +356,7 @@
       [allLetters[i], allLetters[j]] = [allLetters[j], allLetters[i]];
     }
     allLetters.forEach((l, i) => {
-      l.style.transitionDelay = (i * 2) + 'ms';
+      l.style.transitionDelay = (i * 3) + 'ms';
     });
   }
 
@@ -360,14 +364,14 @@
     wordEls.forEach(el => el.classList.remove('reforming'));
   }
 
-  // one full cycle = 4s:
-  // gigote in place (~0.42s) -> burst apart letter by letter clear across
-  // the whole screen, crossing between words (~0.7s + cascade) -> hold the
-  // scattered burst (~0.5s) -> ease gently back into formation (~1.4s + cascade)
-  const CYCLE = 4000;
-  const T_EXPLODE = 480;
-  const T_REFORM = 2200;
-  const T_SETTLE = 3950;
+  // one full cycle = 4.8s, tuned for a smooth, unhurried motion throughout:
+  // gigote in place (~0.42s) -> drift apart letter by letter across the
+  // screen with a gentle ease, crossing between words (~1.7s incl. cascade)
+  // -> brief hold (~0.25s) -> glide gently back into formation (~2s incl. cascade)
+  const CYCLE = 4800;
+  const T_EXPLODE = 500;
+  const T_REFORM = 2500;
+  const T_SETTLE = 4700;
 
   function loop(){
     jiggleAll();
