@@ -82,30 +82,28 @@
     display:inline-block;
     position:relative;
     z-index:1;
+    will-change:transform;
+    backface-visibility:hidden;
     transition:
-      transform 950ms cubic-bezier(.22,.61,.36,1),
-      opacity 500ms ease-out,
-      filter 950ms cubic-bezier(.22,.61,.36,1);
-    transform:translate(0,0) rotate(0deg) scale(1);
-    filter:blur(0px);
+      transform 1050ms cubic-bezier(.22,.61,.36,1),
+      opacity 500ms ease-out;
+    transform:translate3d(0,0,0) rotate(0deg) scale(1);
   }
 
   .word.exploded .letter{
     opacity:1;
     color:var(--ink-1);
     z-index:20;
-    filter:blur(.4px);
     transform:
-      translate(var(--dx), var(--dy))
+      translate3d(var(--dx), var(--dy), 0)
       rotate(var(--rot))
       scale(var(--sc));
   }
 
   .word.reforming .letter{
     transition:
-      transform 1650ms cubic-bezier(.19,.86,.28,1),
-      opacity 1300ms ease-in,
-      filter 900ms ease-out;
+      transform 1750ms cubic-bezier(.19,.86,.28,1),
+      opacity 1300ms ease-in;
   }
 
   @keyframes drift{
@@ -266,21 +264,6 @@
     letterEl.style.setProperty('--sc', '1');
   }
 
-  // true screen-wide burst: measure the letter's real on-screen position and
-  // send it to a random point anywhere in the viewport, so letters from
-  // different words fly past and cross each other mid-air
-  function burstToScreen(letterEl){
-    const rect = letterEl.getBoundingClientRect();
-    const originX = rect.left + rect.width / 2;
-    const originY = rect.top + rect.height / 2;
-    const targetX = rnd(-40, window.innerWidth + 40);
-    const targetY = rnd(-40, window.innerHeight + 40);
-    letterEl.style.setProperty('--dx', (targetX - originX).toFixed(0) + 'px');
-    letterEl.style.setProperty('--dy', (targetY - originY).toFixed(0) + 'px');
-    letterEl.style.setProperty('--rot', rnd(-150, 150).toFixed(0) + 'deg');
-    letterEl.style.setProperty('--sc', rnd(.8, 1.35).toFixed(2));
-  }
-
   words.forEach(w => {
     const orbitEl = document.createElement('div');
     orbitEl.className = 'orbit';
@@ -329,8 +312,6 @@
     // across the whole screen at once rather than word-by-word
     const allLetters = [];
     wordEls.forEach(el => {
-      el.classList.remove('reforming');
-      el.classList.add('exploded');
       el.querySelectorAll('.letter').forEach(l => allLetters.push(l));
     });
     // shuffle the firing order so the cascade doesn't visibly sweep left-to-right
@@ -338,17 +319,39 @@
       const j = Math.floor(Math.random() * (i + 1));
       [allLetters[i], allLetters[j]] = [allLetters[j], allLetters[i]];
     }
+
+    // READ PHASE: measure every letter's current on-screen position first,
+    // with no writes in between, so the browser never has to force a
+    // synchronous layout recalculation mid-loop (the classic cause of jank).
+    const rects = allLetters.map(l => l.getBoundingClientRect());
+
+    // WRITE PHASE: compute + apply every target and stagger delay while the
+    // letters are still at rest, so the class toggle below is the ONE thing
+    // that changes on screen — a single clean transition straight to the
+    // new target, instead of a flash toward last cycle's target first.
     allLetters.forEach((l, i) => {
-      burstToScreen(l);
+      const rect = rects[i];
+      const originX = rect.left + rect.width / 2;
+      const originY = rect.top + rect.height / 2;
+      const targetX = rnd(-40, window.innerWidth + 40);
+      const targetY = rnd(-40, window.innerHeight + 40);
+      l.style.setProperty('--dx', (targetX - originX).toFixed(0) + 'px');
+      l.style.setProperty('--dy', (targetY - originY).toFixed(0) + 'px');
+      l.style.setProperty('--rot', rnd(-150, 150).toFixed(0) + 'deg');
+      l.style.setProperty('--sc', rnd(.8, 1.35).toFixed(2));
       l.style.transitionDelay = (i * 6) + 'ms';
+    });
+
+    // TRIGGER PHASE: now flip the class so every letter animates at once.
+    wordEls.forEach(el => {
+      el.classList.remove('reforming');
+      el.classList.add('exploded');
     });
   }
 
   function reformAll(){
     const allLetters = [];
     wordEls.forEach(el => {
-      el.classList.add('reforming');
-      el.classList.remove('exploded');
       el.querySelectorAll('.letter').forEach(l => allLetters.push(l));
     });
     for (let i = allLetters.length - 1; i > 0; i--){
@@ -357,6 +360,10 @@
     }
     allLetters.forEach((l, i) => {
       l.style.transitionDelay = (i * 3) + 'ms';
+    });
+    wordEls.forEach(el => {
+      el.classList.add('reforming');
+      el.classList.remove('exploded');
     });
   }
 
